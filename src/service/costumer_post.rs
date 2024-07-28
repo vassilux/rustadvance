@@ -18,45 +18,12 @@ pub async fn insert_data_into_customers_table(
     &self,
     customer: Customer,
 ) -> Result<Option<Customer>, Error> {
-    let mut client = self.db.client.lock().await()?;
-    let query_result = client
-        .query(
-            "SELECT count(*) FROM customers WHERE email = @p1",
-            &[&customer.get_email()],
-        )
-        .await
-        .with_context(|| "error execution query")?;
+    let db_lock = self.db.lock().await;
+    let is_customer = db_lock.get_customer(&customer.get_email()).await?;
 
-    if let Some(row) = query_result.into_row().await? {
-        let count: Option<i32> = row.get(0);
-
-        if count.unwrap() > 0 {
-            return Err(Error::msg("Email alraedy exists!").into());
-        }
-    } else {
-        return Err(Error::msg("No rows returned by query").into());
+    if let Some(is_customer) = is_customer {
+        return Err(Error::msg("Email alraedy exists!").into());
     }
-
-    if let Err(e) = client.execute(
-		"INSERT INTO customers (first_name, last_name, address, email, password) VALUES (@p1, @p2, @p3, @p4, @p5)",
-		&[
-			&customer.get_first_name(),
-			&customer.get_last_name(),
-			&customer.get_address(),
-			&customer.get_email(),
-			&customer.get_password()
-		],
-	).await {
-		println!("Error executing query!: {}", e);
-		return Err(e.into());
-	}
-
-    let created_customer = Customer::new(
-        customer.get_first_name().to_string(),
-        customer.get_last_name().to_string(),
-        customer.get_address().to_string(),
-        customer.get_email().to_string(),
-        customer.get_password().to_string(),
-    );
+    let created_customer = db_lock.add_customer(&customer).await?;
     Ok(Some(created_customer))
 }
