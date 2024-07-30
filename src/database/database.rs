@@ -1,11 +1,12 @@
 use oracle::Connection;
 
-use std::error::Error;
 use std::sync::{Arc, Mutex};
 
 use crate::errors::errors_handling::{AppOracleError, FromEnvVarError};
 
-use crate::models::customers::{Customer, CustomerOps};
+use crate::models::customer::{Customer, CustomerOps};
+
+use anyhow::Error;
 
 #[derive(Clone, Debug)]
 pub struct OracleDatabase {
@@ -18,7 +19,7 @@ impl OracleDatabase {
         password: &str,
         hostname: &str,
         service: &str,
-    ) -> Result<Self, Box<dyn Error>> {
+    ) -> Result<Self, Error> {
         let oracle_url = format!("{}/{}", hostname, service);
 
         dbg!("Connecting to Oracle database at {}", oracle_url.clone());
@@ -29,7 +30,7 @@ impl OracleDatabase {
         })
     }
 
-    pub fn add_customer(&self, customer: &Customer) -> Result<(), Box<dyn Error>> {
+    pub fn add_customer(&self, customer: &Customer) -> Result<(), Error> {
         let conn = self.connection.lock().unwrap();
         conn.execute(
             "INSERT INTO M1USER.CUSTOMERS (FIRST_NAME, LAST_NAME, ADDRESS, EMAIL, password) VALUES (:1, :2, :3, :4, :5)",
@@ -39,7 +40,7 @@ impl OracleDatabase {
         Ok(())
     }
 
-    pub fn get_customer(&self, email: &str) -> Result<Option<Customer>, Box<dyn Error>> {
+    pub fn get_customer(&self, email: &str) -> Result<Option<Customer>, Error> {
         let conn = self.connection.lock().unwrap();
         let mut stmt = conn.statement("SELECT customer_id, first_name, last_name, address, email, password FROM M1USER.CUSTOMERS WHERE email = :1").build()?;
         let row = stmt.query_row(&[&email])?;
@@ -56,7 +57,7 @@ impl OracleDatabase {
         Ok(Some(customer))
     }
 
-    pub fn delete_customer(&self, email: &str) -> Result<(), Box<dyn Error>> {
+    pub fn delete_customer(&self, email: &str) -> Result<(), Error> {
         let conn = self.connection.lock().unwrap();
         conn.execute("DELETE FROM M1USER.CUSTOMERS WHERE email = :1", &[&email])?;
         conn.commit()?;

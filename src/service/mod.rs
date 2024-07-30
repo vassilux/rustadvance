@@ -1,1 +1,1 @@
-pub mod costumer_post;
+pub mod customer_post;
