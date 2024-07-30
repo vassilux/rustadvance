@@ -56,7 +56,7 @@ async fn main() -> io::Result<()> {
                             .allowed_header(header::CONTENT_TYPE)
                             .max_age(3600),
                     )
-                    .service(insert_into_customers_table),
+                    .configure(configure_services),
             )
     })
     .bind("127.0.0.1:8080")?
@@ -64,4 +64,8 @@ async fn main() -> io::Result<()> {
     .await?;
 
     Ok(())
+}
+
+fn configure_services(cfg: &mut web::ServiceConfig) {
+    cfg.service(insert_into_customers_table);
 }
