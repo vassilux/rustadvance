@@ -1,37 +1,101 @@
 # Oracle Database REST Service with Actix
 
-## Objectif
+## Objective
 
-Ce projet a pour objectif de fournir un service REST pour accéder à une base de données Oracle, en utilisant le framework Actix pour le serveur web. Il est conçu pour être une démonstration éducative de la création d'une API REST avec gestion des CORS (Cross-Origin Resource Sharing).
+This project aims to provide a REST service to access an Oracle database, using the Actix framework for the web server. It is designed as an educational demonstration of creating a REST API with CORS (Cross-Origin Resource Sharing) management.
 
-## Technologies Utilisées
+## Technologies Used
 
-- **Rust** : Langage de programmation utilisé pour développer le service.
-- **Actix** : Framework web en Rust pour construire des serveurs HTTP performants.
-- **Oracle** : Base de données relationnelle utilisée pour stocker les données.
-- **dotenv** : Pour gérer les variables d'environnement.
-- **serde** : Pour la sérialisation et la désérialisation des données.
-- **validator** : Pour valider les données des requêtes.
+- **Rust**: Programming language used to develop the service.
+- **Actix**: Web framework in Rust for building high-performance HTTP servers.
+- **Oracle**: Relational database used to store data.
+- **dotenv**: For managing environment variables.
+- **serde**: For data serialization and deserialization.
+- **validator**: For validating request data.
 
-## Fonctionnalités
+## Features
 
-- **Connexion à une base de données Oracle** : Connexion et opérations CRUD (Create, Read, Update, Delete) sur les données des clients.
-- **API REST** : Fournit des endpoints REST pour interagir avec la base de données.
-- **Gestion des CORS** : Configuration des CORS pour permettre l'accès depuis différents domaines.
+- **Oracle Database Connection**: Connection and CRUD (Create, Read, Update, Delete) operations on client data.
+- **REST API**: Provides REST endpoints to interact with the database.
+- **CORS Management**: CORS configuration to allow access from different domains.
 
 ## Configuration
 
-### Prérequis
+### Prerequisites
 
-- **Rust** : Assurez-vous d'avoir Rust installé. Vous pouvez l'installer depuis [rust-lang.org](https://www.rust-lang.org/).
-- **Oracle Database** : Assurez-vous d'avoir accès à une instance Oracle Database.
+- **Rust**: Make sure Rust is installed. You can install it from [rust-lang.org](https://www.rust-lang.org/).
+- **Oracle Database**: Ensure access to an Oracle Database instance.
 
-### Variables d'environnement
+### Environment Variables
 
-Créez un fichier `.env` à la racine du projet pour configurer les variables d'environnement nécessaires :
+Create a `.env` file at the root of the project to configure the necessary environment variables:
 
 ```env
-ORACLE_USER=<votre_utilisateur_oracle>
-ORACLE_PASSWORD=<votre_mot_de_passe_oracle>
-ORACLE_HOST=<hôte_oracle>
-ORACLE_SERVICE=<service_oracle>
+ORACLE_USER=<your_oracle_user>
+ORACLE_PASSWORD=<your_oracle_password>
+ORACLE_HOST=<your_oracle_host>
+ORACLE_SERVICE=<your_oracle_service>
+```
+
+
+### Compilation rustls sous Windows 
+
+Install the following:
+
+Installer Cmake https://cmake.org/download/
+Installer Nasm https://www.nasm.us/pub/nasm/releasebuilds/2.16.02/win64/
+Installer Clang https://github.com/vovkos/llvm-package-windows/releases/clang-master
+
+Add the following environment variables:
+
+Ajouter  des variables d'envirenement 
+
+```env
+set LIBCLANG_PATH=C:\clang-13.0.0\bin  
+set PATH=C:\Program Files\CMake\bin;%PATH%
+set PATH=C:\Program Files\NASM;%PATH%
+
+```
+
+### Compilation rustls sous Windows 
+
+```sh
+cargo build
+
+cargo run
+
+```
+
+### Testing
+
+Unit tests are available to verify CRUD operations. To run the tests, use the following command:
+
+```sh
+cargo test
+
+```
+
+
+### REST Endpoints
+
+Add a Customer
+
+URL: /customers
+
+Method: POST
+
+Description: Adds a new customer to the database.
+
+Request Body:
+
+json
+
+```json
+{
+    "first_name": "John",
+    "last_name": "Doe",
+    "address": "123 Main St",
+    "email": "john.doe@example.com",
+    "password": "securepassword"
+}
+```

@@ -8,6 +8,7 @@ mod database;
 mod errors;
 mod models;
 mod service;
+mod tls;
 
 use api::customer_post_api::insert_into_customers_table;
 use database::database::OracleDatabase;
@@ -42,6 +43,8 @@ async fn main() -> io::Result<()> {
 
     println!("Starting server on http://127.0.0.1:8080/");
 
+    let tls_config = tls::load_rustls_config().unwrap();
+
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(customer_post_service.clone()))
@@ -59,7 +62,8 @@ async fn main() -> io::Result<()> {
                     .configure(configure_services),
             )
     })
-    .bind("127.0.0.1:8080")?
+    //.bind("127.0.0.1:8080")?
+    .bind_rustls(("0.0.0.0", 8443), tls_config)?
     .run()
     .await?;
 
