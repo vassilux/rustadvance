@@ -17,7 +17,7 @@ impl CustomerPostService {
         &self,
         customer: Customer,
     ) -> Result<Customer, Error> {
-        let is_customer = self.db.get_customer(&customer.get_email()).unwrap();
+        let is_customer = self.db.get_customer(customer.get_email()).unwrap();
 
         if is_customer.is_some() {
             return Err(Error::msg("Email already exists!"));
@@ -27,7 +27,7 @@ impl CustomerPostService {
 
         let created_customer = self
             .db
-            .get_customer(&customer.get_email())?
+            .get_customer(customer.get_email())?
             .ok_or_else(|| Error::msg("Failed to retrieve the created customer"))?;
 
         Ok(created_customer)

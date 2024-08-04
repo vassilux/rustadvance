@@ -1,12 +1,12 @@
-use oracle::Connection;
+use oracle::{Connection, Error as OracleError};
 
 use std::sync::{Arc, Mutex};
-
-use crate::errors::errors_handling::{AppOracleError, FromEnvVarError};
 
 use crate::models::customer::{Customer, CustomerOps};
 
 use anyhow::Error;
+
+//use crate::errors::errors_handling::{AppOracleError, FromEnvVarError};
 
 #[derive(Clone, Debug)]
 pub struct OracleDatabase {
@@ -22,7 +22,7 @@ impl OracleDatabase {
     ) -> Result<Self, Error> {
         let oracle_url = format!("{}/{}", hostname, service);
 
-        dbg!("Connecting to Oracle database at {}", oracle_url.clone());
+        println!("Connecting to Oracle database at {:?}", oracle_url.clone());
         let conn = Connection::connect(username, password, oracle_url)?;
 
         Ok(Self {
@@ -32,8 +32,9 @@ impl OracleDatabase {
 
     pub fn add_customer(&self, customer: &Customer) -> Result<(), Error> {
         let conn = self.connection.lock().unwrap();
+        println!("Customer {:?}", customer);
         conn.execute(
-            "INSERT INTO M1USER.CUSTOMERS (FIRST_NAME, LAST_NAME, ADDRESS, EMAIL, password) VALUES (:1, :2, :3, :4, :5)",
+            "INSERT INTO customers (FIRST_NAME, LAST_NAME, ADDRESS, EMAIL, password) VALUES (:1, :2, :3, :4, :5)",
             &[&customer.get_first_name(), &customer.get_last_name(), &customer.get_address(), &customer.get_email(), &customer.get_password()],
         )?;
         conn.commit()?;
@@ -42,24 +43,32 @@ impl OracleDatabase {
 
     pub fn get_customer(&self, email: &str) -> Result<Option<Customer>, Error> {
         let conn = self.connection.lock().unwrap();
-        let mut stmt = conn.statement("SELECT customer_id, first_name, last_name, address, email, password FROM M1USER.CUSTOMERS WHERE email = :1").build()?;
-        let row = stmt.query_row(&[&email])?;
+        let mut stmt = conn
+            .statement("SELECT customer_id, first_name, last_name, address, email, password FROM customers WHERE email = :1")
+            .build()?;
 
-        let customer_id = row.get("customer_id")?;
-        let first_name = row.get("first_name")?;
-        let last_name = row.get("last_name")?;
-        let address = row.get("address")?;
-        let email = row.get("email")?;
-        let password = row.get("password")?;
+        match stmt.query_row(&[&email]) {
+            Ok(row) => {
+                let customer_id: Option<i32> = row.get("customer_id")?;
+                let first_name: String = row.get("first_name")?;
+                let last_name: String = row.get("last_name")?;
+                let address: String = row.get("address")?;
+                let email: String = row.get("email")?;
+                let password: String = row.get("password")?;
 
-        let customer = Customer::new(customer_id, first_name, last_name, address, email, password);
+                let customer =
+                    Customer::new(customer_id, first_name, last_name, address, email, password);
 
-        Ok(Some(customer))
+                Ok(Some(customer))
+            }
+            Err(err) if err.kind() == oracle::ErrorKind::NoDataFound => Ok(None),
+            Err(err) => Err(Error::msg(err.to_string())),
+        }
     }
 
     pub fn delete_customer(&self, email: &str) -> Result<(), Error> {
         let conn = self.connection.lock().unwrap();
-        conn.execute("DELETE FROM M1USER.CUSTOMERS WHERE email = :1", &[&email])?;
+        conn.execute("DELETE FROM customers WHERE email = :1", &[&email])?;
         conn.commit()?;
         Ok(())
     }
@@ -68,6 +77,7 @@ impl OracleDatabase {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::{Context, Result};
     use dotenv::dotenv;
     use std::env;
 
@@ -83,27 +93,25 @@ mod tests {
     }
 
     #[test]
-    fn test_oracle_database_init() {
-        // Act: Initialize the
+    fn test_oracle_database_init() -> Result<()> {
+        // Act: Initialize
         dotenv().ok();
-        let username = env::var("ORACLE_USER")
-            .map_err(AppOracleError::from_env_var_error)
-            .unwrap();
-        let password = env::var("ORACLE_PASSWORD")
-            .map_err(AppOracleError::from_env_var_error)
-            .unwrap();
-        let hostname = env::var("ORACLE_HOST")
-            .map_err(AppOracleError::from_env_var_error)
-            .unwrap();
-        let service = env::var("ORACLE_SERVICE")
-            .map_err(AppOracleError::from_env_var_error)
-            .unwrap();
+        let username = env::var("ORACLE_USER").context("ORACLE_USER not set in .env file")?;
+        let password =
+            env::var("ORACLE_PASSWORD").context("ORACLE_PASSWORD not set in .env file")?;
+        let hostname = env::var("ORACLE_HOST").context("ORACLE_HOST not set in .env file")?;
+        let service = env::var("ORACLE_SERVICE").context("ORACLE_SERVICE not set in .env file")?;
         //
         let result = OracleDatabase::init(&username, &password, &hostname, &service);
         // Assert: Check if the result is Ok
         match result {
-            Ok(_) => println!("Database connection initialized successfully."),
-            Err(err) => panic!("Failed to initialize database connection: {:?}", err),
+            Ok(_) => {
+                println!("Database connection initialized successfully.");
+                Ok(())
+            }
+            Err(err) => {
+                panic!("Failed to initialize database connection: {:?}", err);
+            }
         }
     }
 
@@ -131,6 +139,10 @@ mod tests {
             String::from("john.doe@example.com"),
             String::from("securepassword"),
         );
+
+        // Vérifier que le client n'existe pas avant l'ajout
+        let is_customer = db.get_customer(&customer.get_email()).unwrap();
+        assert!(is_customer.is_none(), "Customer already exists");
 
         let result = db.add_customer(&customer);
         assert!(result.is_ok());

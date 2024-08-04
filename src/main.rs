@@ -43,7 +43,7 @@ async fn main() -> io::Result<()> {
 
     println!("Starting server on http://127.0.0.1:8080/");
 
-    let tls_config = tls::load_rustls_config().unwrap();
+    //let tls_config = tls::load_rustls_config().unwrap();
 
     HttpServer::new(move || {
         App::new()
@@ -62,8 +62,8 @@ async fn main() -> io::Result<()> {
                     .configure(configure_services),
             )
     })
-    //.bind("127.0.0.1:8080")?
-    .bind_rustls(("0.0.0.0", 8443), tls_config)?
+    .bind("127.0.0.1:8080")?
+    //.bind_rustls(("0.0.0.0", 8443), tls_config)?
     .run()
     .await?;
 
