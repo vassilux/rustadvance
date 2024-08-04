@@ -11,8 +11,11 @@ mod service;
 mod tls;
 
 use api::customer_post_api::insert_into_customers_table;
+use api::login_cred_post_api::customer_login;
+
 use database::database::OracleDatabase;
 use service::customer_post::CustomerPostService;
+use service::login_post::LoginService;
 
 use actix_cors::Cors;
 use actix_web::middleware::Logger;
@@ -40,6 +43,7 @@ async fn main() -> io::Result<()> {
     let db = Arc::new(db);
 
     let customer_post_service = CustomerPostService::new(db.clone());
+    let login_cred_post_service = LoginService::new(db.clone());
 
     println!("Starting server on http://127.0.0.1:8080/");
 
@@ -48,6 +52,7 @@ async fn main() -> io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(customer_post_service.clone()))
+            .app_data(web::Data::new(login_cred_post_service.clone()))
             .wrap(Logger::default())
             .service(
                 web::scope("/api")
@@ -72,4 +77,5 @@ async fn main() -> io::Result<()> {
 
 fn configure_services(cfg: &mut web::ServiceConfig) {
     cfg.service(insert_into_customers_table);
+    cfg.service(customer_login);
 }

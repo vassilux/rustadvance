@@ -8,8 +8,8 @@ edition = "2021"
 [dependencies]
 oracle = "0.6.2"
 dotenv = "0.15.0"
-serde = { version = "1.0.204", features = ["derive"] }
 validator = {version = "0.18.1", features = ["derive"]}
+serde = { version = "1.0.204", features = ["derive"] }
 serde_derive = "1.0"
 serde_json = "1.0"
 anyhow = "1.0.86"
@@ -17,3 +17,8 @@ actix-cors = "0.7.0"
 actix-web = {version = "4.8.0", features = ["rustls"]}
 rustls = "0.20.0"
 rustls-pemfile= "1.0.4"
+tiberius = { version = "0.12.2", features = ["chrono", "time", "tds73"] }
+tokio = { version = "1.38.0", features = ["full"] }
+tokio-util = { version = "0.7.11", features = ["compat"] }
+regex = "1.10.4"
+log = "0.4"
